@@ -4,8 +4,9 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
+  // Preflight (CORS)
   if (req.method === 'OPTIONS') {
-    return res.status(200).json({ ok: true });
+    return res.status(200).end();
   }
 
   try {
@@ -19,19 +20,23 @@ module.exports = async (req, res) => {
     }
 
     const cleanUsername = username.replace(/^@+/, '').trim();
+
     const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${cleanUsername}`;
-    
+
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Instagram 76.0.0.15.395 Android',
-        'X-IG-App-ID': '936619743392459',
+        // Headers MAIS ACEITOS no ambiente serverless
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.instagram.com/',
       },
       timeout: 10000
     });
 
-    if (response.data && response.data.data && response.data.data.user) {
+    if (response?.data?.data?.user) {
       const user = response.data.data.user;
-      
+
       return res.status(200).json({
         success: true,
         data: {
@@ -39,11 +44,11 @@ module.exports = async (req, res) => {
           full_name: user.full_name || '',
           biography: user.biography || '',
           profile_pic_url: user.profile_pic_url || '',
-          is_private: user.is_private || false,
-          is_verified: user.is_verified || false,
-          follower_count: user.edge_followed_by?.count || 0,
-          following_count: user.edge_follow?.count || 0,
-          media_count: user.edge_owner_to_timeline_media?.count || 0,
+          is_private: Boolean(user.is_private),
+          is_verified: Boolean(user.is_verified),
+          follower_count: user.edge_followed_by?.count ?? 0,
+          following_count: user.edge_follow?.count ?? 0,
+          media_count: user.edge_owner_to_timeline_media?.count ?? 0
         }
       });
     }
@@ -54,24 +59,17 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
+    // LOG REAL (evita crash silencioso no Vercel)
+    console.error('INSTAGRAM ERROR:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+
     return res.status(500).json({
       success: false,
-      error: error.message || 'Erro ao buscar perfil'
+      error: 'Erro ao buscar perfil do Instagram',
+      details: error.message
     });
   }
 };
-```
-
----
-
-### 3️⃣ **Commit changes**
-
----
-
-### 4️⃣ **Aguarda redeploy (~1 minuto)** ⏳
-
----
-
-### 5️⃣ **Testa novamente:**
-```
-https://instagram-api-proxy-theta.vercel.app/api/profile?username=badgallore
