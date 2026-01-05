@@ -6,16 +6,4 @@
     "axios": "^1.6.0"
   }
 }
-```
 
-### 4️⃣ **Commit changes**
-
-### 5️⃣ **Aguarda o redeploy (~1-2 minutos)**
-
-Vai em: https://vercel.com/victors-projects-05e01c28/instagram-api-proxy/deployments
-
-E aguarda aparecer novo deploy 🟢 **Ready**
-
-### 6️⃣ **Testa a API:**
-```
-https://instagram-api-proxy-theta.vercel.app/api/profile?username=badgallore
